@@ -31,11 +31,6 @@ def get_city_by_ip(ip):
     r = requests.get(URL_IP2GEO, payload_location)
     data_location = json.loads(r.text)
     return data_location
-    # location_key = data_location_key['Key']
-    # city = data_location_key['EnglishName']
-    # state = data_location_key['AdministrativeArea']['ID']
-    # postal_code = data_location_key['PrimaryPostalCode']
-    # country = data_location_key['Country']['ID']
 
 
 def get_city_by_postal(postal):
@@ -48,11 +43,6 @@ def get_city_by_postal(postal):
             my_location = r
             break
     return my_location
-    # location_key = my_location['Key']
-    # city = my_location['EnglishName']
-    # state = my_location['AdministrativeArea']['ID']
-    # postal_code = my_location['PrimaryPostalCode']
-    # country = my_location['Country']['ID']
 
 
 def get_current_conditions(location_key, details=True):
@@ -61,8 +51,6 @@ def get_current_conditions(location_key, details=True):
     r = requests.get(URL_COND.format(location_key), payload_conditions)
     data_conditions = json.loads(r.text)
     return data_conditions
-    # conditions = data_conditions[0]['Temperature']['Metric']
-    # temperature = '{}{}'.format(conditions['Value'], conditions['Unit'])
 
 
 def get_external_ip():
@@ -92,17 +80,17 @@ if __name__ == '__main__':
     location = get_city_by_ip(ip_info['ip']) if if_use_ip else get_city_by_postal(ip_info['postal'])
     conditions = get_current_conditions(location['Key'], details)
     weather_icons = {
-        1: '☼',
-        2: '☼',
-        3: '☼',
-        4: '☼',
-        5: '☼',
-        6: '☁',
-        7: '☁',
-        8: '☁',
-        11: '☁',
-        12: '☂',
-        18: '☔',
+        1: u'☼',
+        2: u'☼',
+        3: u'☼',
+        4: u'☼',
+        5: u'☼',
+        6: u'☁',
+        7: u'☁',
+        8: u'☁',
+        11: u'☁',
+        12: u'☂',
+        18: u'☔',
     }
     weather_icon = '' if conditions[0]['WeatherIcon'] not in weather_icons.keys() else '{} '.format(
         weather_icons[conditions[0]['WeatherIcon']])
