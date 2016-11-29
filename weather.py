@@ -90,7 +90,8 @@ if __name__ == '__main__':
         8: u'☁',
         11: u'☁',
         12: u'☂',
-        18: u'☔',
+        18: u'☂',
+        # 18: u'☔',
     }
     weather_icon = '' if conditions[0]['WeatherIcon'] not in weather_icons.keys() else '{} '.format(
         weather_icons[conditions[0]['WeatherIcon']])
