@@ -21,8 +21,8 @@ URL_IP = 'http://ipinfo.io'
 WEATHER_SERVER = 'dataservice.accuweather.com'
 
 URL_IP2GEO = 'http://{}/locations/v1/cities/ipaddress'.format(WEATHER_SERVER)
-URL_COND = 'http://{}/currentconditions/v1/{}'.format(WEATHER_SERVER, {})
 URL_POSTAL = 'http://{}/locations/v1/postalcodes/search'.format(WEATHER_SERVER)
+URL_COND = 'http://{}/currentconditions/v1/{}'.format(WEATHER_SERVER, {})
 
 
 def get_city_by_ip(ip):
@@ -30,6 +30,7 @@ def get_city_by_ip(ip):
     payload_location = _update_dict({'q': ip})
     r = requests.get(URL_IP2GEO, payload_location)
     data_location = json.loads(r.text)
+    _check_status_code(r.status_code, data_location)
     return data_location
 
 
@@ -38,9 +39,10 @@ def get_city_by_postal(postal):
     payload_postal = _update_dict({'q': postal})
     r = requests.get(URL_POSTAL, payload_postal)
     data_postal = json.loads(r.text)
-    for r in data_postal:
-        if r['PrimaryPostalCode'] == postal:
-            return r
+    _check_status_code(r.status_code, data_postal)
+    for rec in data_postal:
+        if rec['PrimaryPostalCode'] == postal:
+            return rec
     raise ValueError('Location not found: {}'.format(postal))
 
 
@@ -49,6 +51,7 @@ def get_current_conditions(location_key, details=True):
     payload_conditions = _update_dict({'details': details})
     r = requests.get(URL_COND.format(location_key), payload_conditions)
     data_conditions = json.loads(r.text)
+    _check_status_code(r.status_code, data_conditions)
     return data_conditions
 
 
@@ -56,7 +59,18 @@ def get_external_ip():
     # Get the external IP:
     r = requests.get(URL_IP)
     data_ip = json.loads(r.text)
+    _check_status_code(r.status_code, data_ip)
     return data_ip
+
+
+def _check_status_code(code, data):
+    if code != 200:
+        code_text = 'Code [{}]'.format(code)
+        try:
+            msg = '{} - {}: {}'.format(code_text, data['Code'], data['Message'])
+        except:
+            msg = '{} - {}'.format(code_text, ', '.join(data.values()))
+        raise ValueError(msg)
 
 
 def _get_api_key():
@@ -102,8 +116,6 @@ if __name__ == '__main__':
         else:
             # It's more reliable to determine location by a postal code rather than by IP:
             location = get_city_by_postal(ip_info['postal'])
-        if location['Code'] == 'ServiceUnavailable':
-            raise ValueError('{}: {}'.format(location['Code'], location['Message']))
         city = location['EnglishName']
         state = location['AdministrativeArea']['ID']
         postal = location['PrimaryPostalCode']
