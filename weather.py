@@ -40,9 +40,8 @@ def get_city_by_postal(postal):
     data_postal = json.loads(r.text)
     for r in data_postal:
         if r['PrimaryPostalCode'] == postal:
-            my_location = r
-            break
-    return my_location
+            return r
+    raise ValueError('Location not found: {}'.format(postal))
 
 
 def get_current_conditions(location_key, details=True):
@@ -66,38 +65,70 @@ def _get_api_key():
     return netrc.netrc().hosts[WEATHER_SERVER][2]
 
 
+def _print_weather(weather_icon, city, state, postal, cond):
+    print(u'Weather in {}, {} {}: {}°{} - {}{}'.format(
+        city, state, postal,
+        cond['Temperature']['Metric']['Value'], cond['Temperature']['Metric']['Unit'],
+        weather_icon, cond['WeatherText'],
+    ))
+
+
 def _update_dict(d):
     d['apikey'] = _get_api_key()
     return d
 
 
 if __name__ == '__main__':
-    if_use_ip = False
-    details = True
+    import argparse
 
-    # Get IP info (it's more reliable to determine location by this method rather than the automatic method by IP):
-    ip_info = get_external_ip()
-    location = get_city_by_ip(ip_info['ip']) if if_use_ip else get_city_by_postal(ip_info['postal'])
-    conditions = get_current_conditions(location['Key'], details)
+    parser = argparse.ArgumentParser(description='Get weather in console')
+    parser.add_argument('-p', '--postal', dest='postal', help='get weather for the provided postal code')
+    parser.add_argument('-i', '--use-ip', dest='use_ip', action='store_true',
+                        help='use IP address to get the weather instead of postal code')
+    parser.add_argument('-n', '--no-details', dest='details', action='store_false',
+                        help='do not get detailed conditions')
+
+    args = parser.parse_args()
+
+    if args.postal:
+        postal = args.postal
+        location = get_city_by_postal(postal)
+        city = location['EnglishName']
+        state = location['AdministrativeArea']['ID']
+    else:
+        ip_info = get_external_ip()
+        if args.use_ip:
+            location = get_city_by_ip(ip_info['ip'])
+        else:
+            # It's more reliable to determine location by a postal code rather than by IP:
+            location = get_city_by_postal(ip_info['postal'])
+        city = location['EnglishName']
+        state = location['AdministrativeArea']['ID']
+        postal = location['PrimaryPostalCode']
+
+    conditions = get_current_conditions(location['Key'], args.details)
     weather_icons = {
-        1: u'☼',
-        2: u'☼',
-        3: u'☼',
-        4: u'☼',
-        5: u'☼',
-        6: u'☁',
-        7: u'☁',
-        8: u'☁',
-        11: u'☁',
-        12: u'☂',
-        18: u'☂',
-        # 18: u'☔',
+        1: u'⛭',  # Sunny
+        2: u'⛭☁',  # Mostly Sunny
+        3: u'☼☁',  # Partly Sunny
+        4: u'⛅',  # Intermittent Clouds
+        5: u'⛅☁',  # Hazy Sunshine
+        6: u'☁⛅',  # Mostly Cloudy
+        7: u'☁',  # Cloudy
+        8: u'@☁',  # Dreary (Overcast)
+        11: u'🌫',  # Fog
+        12: u'☂⛆︎',  # Showers
+        13: u'☁⛅⛆☂︎',  # Mostly Cloudy w/ Showers
+        14: u'⛅☁⛆☂',  # Partly Sunny w/ Showers
+        15: u'☁⚡⛈⛆☂',  # T-Storms
+        16: u'☁⛅⚡⛈⛆☂',  # Mostly Cloudy w/ T-Storms
+        17: u'⛅☁⚡⛈⛆☂',  # Partly Sunny w/ T-Storms
+        18: u'☁⛆☂',  # Rain
     }
-    weather_icon = '' if conditions[0]['WeatherIcon'] not in weather_icons.keys() else '{} '.format(
-        weather_icons[conditions[0]['WeatherIcon']])
 
-    print(u'Weather in {}, {} {}: {}°{} - {}{}'.format(
-        ip_info['city'], ip_info['region'], ip_info['postal'],
-        conditions[0]['Temperature']['Metric']['Value'], conditions[0]['Temperature']['Metric']['Unit'],
-        weather_icon, conditions[0]['WeatherText'],
-    ))
+    try:
+        weather_icon = '' if conditions[0]['WeatherIcon'] not in weather_icons.keys() else '{} '.format(
+            weather_icons[conditions[0]['WeatherIcon']])
+        _print_weather(weather_icon, city, state, postal, conditions[0])
+    except UnicodeEncodeError:
+        _print_weather('', city, state, postal, conditions[0])
