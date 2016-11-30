@@ -102,6 +102,8 @@ if __name__ == '__main__':
         else:
             # It's more reliable to determine location by a postal code rather than by IP:
             location = get_city_by_postal(ip_info['postal'])
+        if location['Code'] == 'ServiceUnavailable':
+            raise ValueError('{}: {}'.format(location['Code'], location['Message']))
         city = location['EnglishName']
         state = location['AdministrativeArea']['ID']
         postal = location['PrimaryPostalCode']
