@@ -80,7 +80,7 @@ def _get_api_key():
 
 
 def _print_weather(weather_icon, city, state, postal, cond):
-    print(u'Weather in {}, {} {}: {}°{} - {}{}'.format(
+    print('Weather in {}, {} {}: {}\'{} - {}{}'.format(
         city, state, postal,
         cond['Temperature']['Metric']['Value'], cond['Temperature']['Metric']['Unit'],
         weather_icon, cond['WeatherText'],
