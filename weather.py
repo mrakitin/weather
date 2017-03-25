@@ -63,6 +63,14 @@ def get_external_ip():
     return data_ip
 
 
+def printable_weather(weather_icon, city, state, postal, cond):
+    return 'Weather in {}, {} {}: {}\'{} - {}{}'.format(
+        city, state, postal,
+        cond['Temperature']['Metric']['Value'], cond['Temperature']['Metric']['Unit'],
+        weather_icon, cond['WeatherText'],
+    )
+
+
 def _check_status_code(code, data):
     if code != 200:
         code_text = 'Code [{}]'.format(code)
@@ -79,12 +87,9 @@ def _get_api_key():
     return netrc.netrc().hosts[WEATHER_SERVER][2]
 
 
-def _print_weather(weather_icon, city, state, postal, cond):
-    print('Weather in {}, {} {}: {}\'{} - {}{}'.format(
-        city, state, postal,
-        cond['Temperature']['Metric']['Value'], cond['Temperature']['Metric']['Unit'],
-        weather_icon, cond['WeatherText'],
-    ))
+def _print_weather(*args):
+    w = printable_weather(*args)
+    print(w)
 
 
 def _update_dict(d):
