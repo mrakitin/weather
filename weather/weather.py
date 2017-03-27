@@ -81,12 +81,31 @@ def get_external_ip(ip=None):
     return data_ip
 
 
-def printable_weather(weather_icon, city, state, postal, cond):
-    return u'Weather in {}, {} {}: {}{}{} - {}{}'.format(
-        city, state, postal,
-        cond['Temperature']['Metric']['Value'], u'\u00B0', cond['Temperature']['Metric']['Unit'],
-        weather_icon, cond['WeatherText'],
-    )
+def printable_weather(city, state, postal, conditions, no_icons=False):
+    weather_icon = '' if no_icons else weather_icons(conditions[0]['WeatherIcon'])
+    return _formatted_weather(weather_icon, city, state, postal, conditions[0])
+
+
+def weather_icons(icon_index):
+    icons = {
+        1: u'⛭',  # Sunny
+        2: u'⛭☁',  # Mostly Sunny
+        3: u'☼☁',  # Partly Sunny
+        4: u'⛅',  # Intermittent Clouds
+        5: u'⛅☁',  # Hazy Sunshine
+        6: u'☁⛅',  # Mostly Cloudy
+        7: u'☁',  # Cloudy
+        8: u'@☁',  # Dreary (Overcast)
+        11: u'🌫',  # Fog
+        12: u'☂⛆︎',  # Showers
+        13: u'☁⛅⛆☂︎',  # Mostly Cloudy w/ Showers
+        14: u'⛅☁⛆☂',  # Partly Sunny w/ Showers
+        15: u'☁⚡⛈⛆☂',  # T-Storms
+        16: u'☁⛅⚡⛈⛆☂',  # Mostly Cloudy w/ T-Storms
+        17: u'⛅☁⚡⛈⛆☂',  # Partly Sunny w/ T-Storms
+        18: u'☁⛆☂',  # Rain
+    }
+    return '' if icon_index not in icons.keys() else '{} '.format(icons[icon_index])
 
 
 def _check_status_code(code, data):
@@ -99,15 +118,18 @@ def _check_status_code(code, data):
         raise ValueError(msg)
 
 
+def _formatted_weather(weather_icon, city, state, postal, cond):
+    return u'Weather in {}, {} {}: {}{}{} - {}{}'.format(
+        city, state, postal,
+        cond['Temperature']['Metric']['Value'], u'\u00B0', cond['Temperature']['Metric']['Unit'],
+        weather_icon, cond['WeatherText'],
+    )
+
+
 def _get_api_key():
     if not os.environ.get('HOME'):
         os.environ.setdefault('HOME', os.environ.get('userprofile'))
     return netrc.netrc().hosts[WEATHER_SERVER][2]
-
-
-def _print_weather(*args):
-    w = printable_weather(*args)
-    print(w)
 
 
 def _update_dict(d):
@@ -148,28 +170,7 @@ def weather_cli():
         postal = location['PrimaryPostalCode']
 
     conditions = get_current_conditions(location_key=location['Key'], details=args.details)
-    weather_icons = {
-        1: u'⛭',  # Sunny
-        2: u'⛭☁',  # Mostly Sunny
-        3: u'☼☁',  # Partly Sunny
-        4: u'⛅',  # Intermittent Clouds
-        5: u'⛅☁',  # Hazy Sunshine
-        6: u'☁⛅',  # Mostly Cloudy
-        7: u'☁',  # Cloudy
-        8: u'@☁',  # Dreary (Overcast)
-        11: u'🌫',  # Fog
-        12: u'☂⛆︎',  # Showers
-        13: u'☁⛅⛆☂︎',  # Mostly Cloudy w/ Showers
-        14: u'⛅☁⛆☂',  # Partly Sunny w/ Showers
-        15: u'☁⚡⛈⛆☂',  # T-Storms
-        16: u'☁⛅⚡⛈⛆☂',  # Mostly Cloudy w/ T-Storms
-        17: u'⛅☁⚡⛈⛆☂',  # Partly Sunny w/ T-Storms
-        18: u'☁⛆☂',  # Rain
-    }
-
     try:
-        weather_icon = '' if conditions[0]['WeatherIcon'] not in weather_icons.keys() else '{} '.format(
-            weather_icons[conditions[0]['WeatherIcon']])
-        _print_weather(weather_icon, city, state, postal, conditions[0])
+        print(printable_weather(city=city, state=state, postal=postal, conditions=conditions))
     except UnicodeEncodeError:
-        _print_weather('', city, state, postal, conditions[0])
+        print(printable_weather(city=city, state=state, postal=postal, conditions=conditions, no_icons=True))
