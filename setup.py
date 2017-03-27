@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
+
+with open('requirements.txt') as f:
+    required = f.read()
 
 setup(
     name='weather',
@@ -9,4 +12,5 @@ setup(
     author='Maksim Rakitin',
     url='https://github.com/mrakitin/web',
     packages=['weather'],
+    install_requires=required,
 )
