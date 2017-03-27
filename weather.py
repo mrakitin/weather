@@ -6,6 +6,7 @@ Get weather in console.
 # http://rss.accuweather.com/rss/liveweather_rss.asp?metric=1&locCode=<postal_code>
 # Find location by IP:
 # > curl -X GET "http://dataservice.accuweather.com/locations/v1/cities/ipaddress?apikey=<apikey>q=<ip_address>"
+# http://api.wunderground.com/api/<apikey>/conditions/q/11767.json
 
 Date: 2016-11-29
 Author: Maksim Rakitin
@@ -18,12 +19,18 @@ import os
 import requests
 
 URL_IP = 'http://ipinfo.io'
-WEATHER_SERVER = 'dataservice.accuweather.com'
 
-URL_IP2GEO = 'http://{}/locations/v1/cities/ipaddress'.format(WEATHER_SERVER)
-URL_POSTAL = 'http://{}/locations/v1/postalcodes/search'.format(WEATHER_SERVER)
-URL_COND = 'http://{}/currentconditions/v1/{}'.format(WEATHER_SERVER, {})
-
+server = 'accu'  # 'wund'
+if server == 'accu':
+    WEATHER_SERVER = 'dataservice.accuweather.com'
+    URL_IP2GEO = 'http://{}/locations/v1/cities/ipaddress'.format(WEATHER_SERVER)
+    URL_POSTAL = 'http://{}/locations/v1/postalcodes/search'.format(WEATHER_SERVER)
+    URL_COND = 'http://{}/currentconditions/v1/{}'.format(WEATHER_SERVER, {})
+elif server == 'wund':
+    WEATHER_SERVER = 'api.wunderground.com'
+    URL_COND = 'http://{}/api/{}/conditions/q/{}.json'.format(WEATHER_SERVER, {}, {})
+else:
+    raise ValueError('Server <{}> is not supported.'.format(server))
 
 def get_city_by_ip(ip):
     # Get the location key from the IP address:
@@ -54,6 +61,13 @@ def get_current_conditions(location_key, details=True):
     _check_status_code(r.status_code, data_conditions)
     return data_conditions
 
+def get_current_conditions_wund(postal, apikey):
+    # Get current conditions:
+    payload_conditions = {}
+    r = requests.get(URL_COND.format(apikey, postal), payload_conditions)
+    data_conditions = json.loads(r.text)
+    _check_status_code(r.status_code, data_conditions)
+    return data_conditions
 
 def get_external_ip():
     # Get the external IP:
@@ -106,9 +120,13 @@ if __name__ == '__main__':
 
     if args.postal:
         postal = args.postal
-        location = get_city_by_postal(postal)
-        city = location['EnglishName']
-        state = location['AdministrativeArea']['ID']
+        if server == 'accu':
+            location = get_city_by_postal(postal)
+            city = location['EnglishName']
+            state = location['AdministrativeArea']['ID']
+        else:
+            apikey = _get_api_key()
+            location = get_current_conditions_wund(postal, apikey)
     else:
         ip_info = get_external_ip()
         if args.use_ip:
