@@ -115,7 +115,7 @@ def _update_dict(d):
     return d
 
 
-if __name__ == '__main__':
+def weather_cli():
     import argparse
 
     parser = argparse.ArgumentParser(description='Get weather in console')
@@ -130,24 +130,24 @@ if __name__ == '__main__':
     if args.postal:
         postal = args.postal
         if server == 'accu':
-            location = get_city_by_postal(postal)
+            location = get_city_by_postal(postal=postal)
             city = location['EnglishName']
             state = location['AdministrativeArea']['ID']
         else:
             apikey = _get_api_key()
-            location = get_current_conditions_wund(postal, apikey)
+            location = get_current_conditions_wund(postal=postal, apikey=apikey)
     else:
         ip_info = get_external_ip()
         if args.use_ip:
-            location = get_city_by_ip(ip_info['ip'])
+            location = get_city_by_ip(ip=ip_info['ip'])
         else:
             # It's more reliable to determine location by a postal code rather than by IP:
-            location = get_city_by_postal(ip_info['postal'])
+            location = get_city_by_postal(postal=ip_info['postal'])
         city = location['EnglishName']
         state = location['AdministrativeArea']['ID']
         postal = location['PrimaryPostalCode']
 
-    conditions = get_current_conditions(location['Key'], args.details)
+    conditions = get_current_conditions(location_key=location['Key'], details=args.details)
     weather_icons = {
         1: u'⛭',  # Sunny
         2: u'⛭☁',  # Mostly Sunny

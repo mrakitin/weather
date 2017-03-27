@@ -13,4 +13,7 @@ setup(
     url='https://github.com/mrakitin/web',
     packages=['weather'],
     install_requires=required,
+    entry_points={
+        "console_scripts": ['weather = weather.weather:weather_cli']
+    },
 )
