@@ -32,6 +32,7 @@ elif server == 'wund':
 else:
     raise ValueError('Server <{}> is not supported.'.format(server))
 
+
 def get_city_by_ip(ip):
     # Get the location key from the IP address:
     payload_location = _update_dict({'q': ip})
@@ -61,6 +62,7 @@ def get_current_conditions(location_key, details=True):
     _check_status_code(r.status_code, data_conditions)
     return data_conditions
 
+
 def get_current_conditions_wund(postal, apikey):
     # Get current conditions:
     payload_conditions = {}
@@ -69,18 +71,20 @@ def get_current_conditions_wund(postal, apikey):
     _check_status_code(r.status_code, data_conditions)
     return data_conditions
 
-def get_external_ip():
+
+def get_external_ip(ip=None):
     # Get the external IP:
-    r = requests.get(URL_IP)
+    url = URL_IP if not ip else '{}/{}'.format(URL_IP, ip)
+    r = requests.get(url=url)
     data_ip = json.loads(r.text)
     _check_status_code(r.status_code, data_ip)
     return data_ip
 
 
 def printable_weather(weather_icon, city, state, postal, cond):
-    return 'Weather in {}, {} {}: {}\'{} - {}{}'.format(
+    return u'Weather in {}, {} {}: {}{}{} - {}{}'.format(
         city, state, postal,
-        cond['Temperature']['Metric']['Value'], cond['Temperature']['Metric']['Unit'],
+        cond['Temperature']['Metric']['Value'], u'\u00B0', cond['Temperature']['Metric']['Unit'],
         weather_icon, cond['WeatherText'],
     )
 
