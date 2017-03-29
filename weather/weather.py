@@ -105,7 +105,7 @@ def weather_icons(icon_index):
         17: u'⛅☁⚡⛈⛆☂',  # Partly Sunny w/ T-Storms
         18: u'☁⛆☂',  # Rain
     }
-    return '' if icon_index not in icons.keys() else '{} '.format(icons[icon_index])
+    return u'' if icon_index not in icons.keys() else u'{} '.format(icons[icon_index])
 
 
 def _check_status_code(code, data):
