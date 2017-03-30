@@ -2,11 +2,11 @@
 """
 Get weather in console.
 
-# http://rss.accuweather.com/rss/liveweather_rss.asp?metric=1&locCode=<state%20name>|<city>
-# http://rss.accuweather.com/rss/liveweather_rss.asp?metric=1&locCode=<postal_code>
+# https://rss.accuweather.com/rss/liveweather_rss.asp?metric=1&locCode=<state%20name>|<city>
+# https://rss.accuweather.com/rss/liveweather_rss.asp?metric=1&locCode=<postal_code>
 # Find location by IP:
-# > curl -X GET "http://dataservice.accuweather.com/locations/v1/cities/ipaddress?apikey=<apikey>q=<ip_address>"
-# http://api.wunderground.com/api/<apikey>/conditions/q/11767.json
+# > curl -X GET "https://dataservice.accuweather.com/locations/v1/cities/ipaddress?apikey=<apikey>q=<ip_address>"
+# https://api.wunderground.com/api/<apikey>/conditions/q/11767.json
 
 Date: 2016-11-29
 Author: Maksim Rakitin
@@ -18,17 +18,17 @@ import os
 
 import requests
 
-URL_IP = 'http://ipinfo.io'
+URL_IP = 'https://ipinfo.io'
 
 server = 'accu'  # 'wund'
 if server == 'accu':
     WEATHER_SERVER = 'dataservice.accuweather.com'
-    URL_IP2GEO = 'http://{}/locations/v1/cities/ipaddress'.format(WEATHER_SERVER)
-    URL_POSTAL = 'http://{}/locations/v1/postalcodes/search'.format(WEATHER_SERVER)
-    URL_COND = 'http://{}/currentconditions/v1/{}'.format(WEATHER_SERVER, {})
+    URL_IP2GEO = 'https://{}/locations/v1/cities/ipaddress'.format(WEATHER_SERVER)
+    URL_POSTAL = 'https://{}/locations/v1/postalcodes/search'.format(WEATHER_SERVER)
+    URL_COND = 'https://{}/currentconditions/v1/{}'.format(WEATHER_SERVER, {})
 elif server == 'wund':
     WEATHER_SERVER = 'api.wunderground.com'
-    URL_COND = 'http://{}/api/{}/conditions/q/{}.json'.format(WEATHER_SERVER, {}, {})
+    URL_COND = 'https://{}/api/{}/conditions/q/{}.json'.format(WEATHER_SERVER, {}, {})
 else:
     raise ValueError('Server <{}> is not supported.'.format(server))
 
