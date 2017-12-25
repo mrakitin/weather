@@ -20,7 +20,8 @@ import requests
 
 URL_IP = 'https://ipinfo.io'
 
-server = 'accu'  # 'wund'
+# server = 'accu'
+server = 'wund'
 if server == 'accu':
     WEATHER_SERVER = 'dataservice.accuweather.com'
     URL_IP2GEO = 'https://{}/locations/v1/cities/ipaddress'.format(WEATHER_SERVER)
@@ -28,6 +29,7 @@ if server == 'accu':
     URL_COND = 'https://{}/currentconditions/v1/{}'.format(WEATHER_SERVER, {})
 elif server == 'wund':
     WEATHER_SERVER = 'api.wunderground.com'
+    URL_POSTAL = 'https://{}/api/{}/geolookup/q/{}.json'.format(WEATHER_SERVER, {}, {})
     URL_COND = 'https://{}/api/{}/conditions/q/{}.json'.format(WEATHER_SERVER, {}, {})
 else:
     raise ValueError('Server <{}> is not supported.'.format(server))
@@ -46,6 +48,17 @@ def get_city_by_postal(postal):
     # Get the location key from the postal code:
     payload_postal = _update_dict({'q': postal})
     r = requests.get(URL_POSTAL, payload_postal)
+    data_postal = json.loads(r.text)
+    _check_status_code(r.status_code, data_postal)
+    for rec in data_postal:
+        if rec['PrimaryPostalCode'] == postal:
+            return rec
+    raise ValueError('Location not found: {}'.format(postal))
+
+def get_city_by_postal_wund(postal, apikey):
+    # Get the location key from the postal code:
+    payload_postal = _update_dict()
+    r = requests.get(URL_POSTAL.format(apikey, postal), payload_postal)
     data_postal = json.loads(r.text)
     _check_status_code(r.status_code, data_postal)
     for rec in data_postal:
@@ -82,8 +95,11 @@ def get_external_ip(ip=None):
 
 
 def printable_weather(city, state, postal, conditions, no_icons=False):
-    weather_icon = '' if no_icons else weather_icons(conditions[0]['WeatherIcon'])
-    return _formatted_weather(weather_icon, city, state, postal, conditions[0])
+    if server == 'accu':
+        weather_icon = '' if no_icons else weather_icons(conditions[0]['WeatherIcon'])
+    else:
+        weather_icon = '' if no_icons else weather_icons(conditions['icon'])
+    return _formatted_weather(weather_icon, city, state, postal, conditions[0] if server == 'accu' else conditions)
 
 
 def weather_icons(icon_index):
@@ -119,12 +135,20 @@ def _check_status_code(code, data):
 
 
 def _formatted_weather(weather_icon, city, state, postal, cond):
-    return u'Weather in {}, {} {}: {}{}{} - {}{}'.format(
-        city, state, postal,
-        cond['Temperature']['Metric']['Value'], u'\u00B0', cond['Temperature']['Metric']['Unit'],
-        weather_icon, cond['WeatherText'],
-    )
-
+    if server == 'accu':
+        return u'Weather in {}, {} {}: {}{}{} - {}{}'.format(
+            city, state, postal,
+            cond['Temperature']['Metric']['Value'], u'\u00B0', cond['Temperature']['Metric']['Unit'],
+            weather_icon, cond['WeatherText'],
+        )
+    elif server == 'wund':
+        return u'Weather in {}, {} {}: {}{}{} - {}{}'.format(
+            city, state, postal,
+            cond['temp_c'], u'\u00B0', 'C',
+            weather_icon, cond['weather'].lower().capitalize(),
+        )
+    else:
+        raise ValueError('{}: server not found'.format(server))
 
 def _get_api_key():
     if not os.environ.get('HOME'):
@@ -155,9 +179,10 @@ def weather_cli():
             location = get_city_by_postal(postal=postal)
             city = location['EnglishName']
             state = location['AdministrativeArea']['ID']
+        elif server == 'wund':
+            pass
         else:
-            apikey = _get_api_key()
-            location = get_current_conditions_wund(postal=postal, apikey=apikey)
+            raise ValueError('{}: server not defined'.format(server))
     else:
         ip_info = get_external_ip()
         if args.use_ip:
@@ -169,7 +194,15 @@ def weather_cli():
         state = location['AdministrativeArea']['ID']
         postal = location['PrimaryPostalCode']
 
-    conditions = get_current_conditions(location_key=location['Key'], details=args.details)
+    if server == 'accu':
+        conditions = get_current_conditions(location_key=location['Key'], details=args.details)
+    else:
+        apikey = _get_api_key()
+        conditions = get_current_conditions_wund(postal=postal, apikey=apikey)['current_observation']
+        location = conditions['display_location']
+        city = location['city']
+        state = location['state']
+
     try:
         print(printable_weather(city=city, state=state, postal=postal, conditions=conditions))
     except UnicodeEncodeError:
